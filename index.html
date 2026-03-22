@@ -1,147 +1,149 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Custom Wordle</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #ffffff;
-      color: #000;
-    }
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Custom Wordle</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #ffffff;
+    color: #000;
+    margin: 0;
+    padding: 0;
+  }
 
-    h1 {
-      display: inline-block;
-      background: #eaeaea;
-      padding: 10px 20px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
+  h1 {
+    display: inline-block;
+    background: #eaeaea;
+    padding: 12px 24px;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 2em;
+  }
 
-    #board {
-      display: grid;
-      grid-template-rows: repeat(6, 1fr);
-      gap: 5px;
-      width: 260px;
-      margin: 20px auto;
-    }
+  #board {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 6px;
+    width: 90%;
+    max-width: 350px;
+    margin: 20px auto;
+  }
 
-    .row {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 5px;
-    }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
 
-    .tile {
-      width: 50px;
-      height: 50px;
-      border: 2px solid #ccc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      text-transform: uppercase;
-      background: #fff;
-    }
+  .tile {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border: 2px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    text-transform: uppercase;
+    background: #fff;
+  }
 
-    .correct { background: #538d4e; color: white; }
-    .present { background: #b59f3b; color: white; }
-    .absent  { background: #787c7e; color: white; }
+  .correct { background: #538d4e; color: white; }
+  .present { background: #b59f3b; color: white; }
+  .absent  { background: #787c7e; color: white; }
 
-    #keyboard {
-      width: 90%;
-      max-width: 500px;
-      margin: 20px auto;
-    }
+  #keyboard {
+    width: 95%;
+    max-width: 400px;
+    margin: 20px auto;
+  }
 
-    .key-row {
-      display: flex;
-      justify-content: center;
-      margin-bottom: 5px;
-    }
+  .key-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5px;
+  }
 
-    button.key {
-      margin: 2px;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      background: #d3d6da;
-      color: black;
-      min-width: 35px;
-    }
+  button.key {
+    margin: 3px;
+    padding: 12px;
+    font-size: 1em;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background: #d3d6da;
+    color: black;
+    flex: 1 0 0;
+    min-width: 35px;
+  }
 
-    button.wide {
-      min-width: 65px;
-      font-size: 12px;
-    }
+  button.wide {
+    flex: 1.5 0 0;
+    font-size: 0.9em;
+  }
 
-    #message {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-  </style>
+  #message {
+    margin-top: 10px;
+    font-size: 1.2em;
+    min-height: 1.5em;
+  }
+
+  @media (max-width: 400px) {
+    h1 { font-size: 1.5em; }
+    button.key { padding: 10px; font-size: 0.9em; }
+  }
+</style>
 </head>
 
 <body>
-
 <h1>Wordle Clone</h1>
-
 <div id="board"></div>
 <div id="keyboard"></div>
 <p id="message"></p>
 
 <script>
-  const words = ["apple", "grape", "stone", "plant", "chair", "light"];
+  const words = ["apple", "grape", "stone", "plant", "chair", "light", "world", "brain", "candy", "fruit"];
+  const validWords = [...words, "shiny", "table", "water", "money"]; // Add more valid words here
   const answer = words[Math.floor(Math.random() * words.length)];
 
   let currentRow = 0;
   let currentGuess = "";
 
   const board = document.getElementById("board");
+  const keyboard = document.getElementById("keyboard");
   const message = document.getElementById("message");
 
   // Create board
   for (let i = 0; i < 6; i++) {
     const row = document.createElement("div");
     row.className = "row";
-
     for (let j = 0; j < 5; j++) {
       const tile = document.createElement("div");
       tile.className = "tile";
       row.appendChild(tile);
     }
-
     board.appendChild(row);
   }
 
-  // Proper keyboard layout
+  // Keyboard layout
   const layout = [
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
     ["ENTER","Z","X","C","V","B","N","M","⌫"]
   ];
 
-  const keyboard = document.getElementById("keyboard");
-
   layout.forEach(row => {
     const rowDiv = document.createElement("div");
     rowDiv.className = "key-row";
-
     row.forEach(key => {
       const button = document.createElement("button");
       button.textContent = key;
       button.className = "key";
-
-      if (key === "ENTER" || key === "⌫") {
-        button.classList.add("wide");
-      }
-
+      if (key === "ENTER" || key === "⌫") button.classList.add("wide");
       button.onclick = () => handleKey(key);
       rowDiv.appendChild(button);
     });
-
     keyboard.appendChild(rowDiv);
   });
 
@@ -152,14 +154,12 @@
       submitGuess();
       return;
     }
-
     if (key === "⌫") {
       currentGuess = currentGuess.slice(0, -1);
       updateTiles();
       return;
     }
-
-    if (currentGuess.length < 5) {
+    if (currentGuess.length < 5 && /^[a-zA-Z]$/.test(key)) {
       currentGuess += key.toLowerCase();
       updateTiles();
     }
@@ -167,7 +167,6 @@
 
   function updateTiles() {
     const row = board.children[currentRow].children;
-
     for (let i = 0; i < 5; i++) {
       row[i].textContent = currentGuess[i] || "";
     }
@@ -176,6 +175,11 @@
   function submitGuess() {
     if (currentGuess.length !== 5) {
       message.textContent = "Enter 5 letters";
+      return;
+    }
+
+    if (!validWords.includes(currentGuess)) {
+      message.textContent = "Not a valid word";
       return;
     }
 
@@ -199,6 +203,7 @@
 
     if (currentGuess === answer) {
       message.textContent = "You win!";
+      currentRow = 6;
       return;
     }
 
@@ -212,18 +217,22 @@
 
   function colorKey(letter, status) {
     const buttons = document.querySelectorAll("button.key");
-
     buttons.forEach(btn => {
       if (btn.textContent.toLowerCase() === letter) {
         if (status === "correct") btn.style.background = "#538d4e";
         else if (status === "present") btn.style.background = "#b59f3b";
         else btn.style.background = "#787c7e";
-
         btn.style.color = "white";
       }
     });
   }
-</script>
 
+  // Physical keyboard support
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleKey("ENTER");
+    else if (e.key === "Backspace") handleKey("⌫");
+    else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+  });
+</script>
 </body>
 </html>
