@@ -32,16 +32,16 @@
   #board {
     display: grid;
     grid-template-rows: repeat(6, 1fr);
-    gap: 6px;
+    gap: 4px;
     width: 90%;
-    max-width: 350px;
+    max-width: 300px;
     margin: 20px auto;
   }
 
   .row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
+    gap: 4px;
   }
 
   .tile {
@@ -51,7 +51,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2em;
+    font-size: 1.8em;
     text-transform: uppercase;
     background: #fff;
   }
@@ -101,10 +101,28 @@
     min-height: 1.5em;
   }
 
+  #retry-btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1em;
+    border: none;
+    border-radius: 8px;
+    background: #538d4e;
+    color: white;
+    cursor: pointer;
+    display: none;
+  }
+
+  #score {
+    margin-top: 10px;
+    font-size: 1.1em;
+  }
+
   @media (max-width: 400px) {
     h1 { font-size: 1.5em; }
     .tile { font-size: 1.5em; }
     button.key { font-size: 0.9em; padding: 8px; }
+    #retry-btn { font-size: 0.9em; padding: 8px 16px; }
   }
 </style>
 </head>
@@ -115,79 +133,99 @@
   <div id="board"></div>
   <div id="keyboard"></div>
   <p id="message"></p>
+  <button id="retry-btn">Retry</button>
+  <p id="score">Score: 0</p>
 </div>
 
 <script>
 let words = ["apple","grape","stone","plant","chair","light","world","brain","candy","fruit"];
 let validWords = [];
-const answer = words[Math.floor(Math.random() * words.length)];
-
+let answer = "";
 let currentRow = 0;
 let currentGuess = "";
+let score = 0;
 
 const board = document.getElementById("board");
 const keyboard = document.getElementById("keyboard");
 const message = document.getElementById("message");
+const retryBtn = document.getElementById("retry-btn");
+const scoreDisplay = document.getElementById("score");
 
-// Load external word list
+// Load external word list if present
 fetch("words.txt")
   .then(res => res.text())
   .then(text => {
     validWords = text.split("\n").map(w => w.trim().toLowerCase());
+    startGame();
   })
   .catch(err => {
     console.log("Error loading words.txt, using default:", err);
-    validWords = [...words]; // fallback
+    validWords = [...words];
+    startGame();
   });
 
-// Create board
-for (let i = 0; i < 6; i++) {
-  const row = document.createElement("div");
-  row.className = "row";
-  for (let j = 0; j < 5; j++) {
-    const tile = document.createElement("div");
-    tile.className = "tile";
-    row.appendChild(tile);
+function startGame() {
+  answer = words[Math.floor(Math.random() * words.length)];
+  currentRow = 0;
+  currentGuess = "";
+  message.textContent = "";
+  retryBtn.style.display = "none";
+
+  // Clear board
+  board.innerHTML = "";
+  for(let i=0;i<6;i++){
+    const row = document.createElement("div");
+    row.className = "row";
+    for(let j=0;j<5;j++){
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      row.appendChild(tile);
+    }
+    board.appendChild(row);
   }
-  board.appendChild(row);
-}
 
-// Keyboard layout
-const layout = [
-  ["Q","W","E","R","T","Y","U","I","O","P"],
-  ["A","S","D","F","G","H","J","K","L"],
-  ["ENTER","Z","X","C","V","B","N","M","⌫"]
-];
+  // Create keyboard if not already
+  if(keyboard.children.length===0){
+    const layout = [
+      ["Q","W","E","R","T","Y","U","I","O","P"],
+      ["A","S","D","F","G","H","J","K","L"],
+      ["ENTER","Z","X","C","V","B","N","M","⌫"]
+    ];
+    layout.forEach((rowKeys,i)=>{
+      const rowDiv = document.createElement("div");
+      rowDiv.className = "key-row";
+      if(i===0) rowDiv.classList.add("first");
+      if(i===1) rowDiv.classList.add("second");
+      if(i===2) rowDiv.classList.add("third");
+      rowKeys.forEach(key=>{
+        const btn = document.createElement("button");
+        btn.textContent = key;
+        btn.className = "key";
+        if(key==="ENTER"||key==="⌫") btn.classList.add("wide");
+        btn.onclick = ()=>handleKey(key);
+        rowDiv.appendChild(btn);
+      });
+      keyboard.appendChild(rowDiv);
+    });
+  }
 
-layout.forEach((rowKeys,i)=>{
-  const rowDiv = document.createElement("div");
-  rowDiv.className = "key-row";
-  if(i===0) rowDiv.classList.add("first");
-  if(i===1) rowDiv.classList.add("second");
-  if(i===2) rowDiv.classList.add("third");
-
-  rowKeys.forEach(key=>{
-    const btn = document.createElement("button");
-    btn.textContent = key;
-    btn.className = "key";
-    if(key==="ENTER"||key==="⌫") btn.classList.add("wide");
-    btn.onclick = ()=>handleKey(key);
-    rowDiv.appendChild(btn);
+  // Reset keyboard colors
+  document.querySelectorAll("button.key").forEach(btn=>{
+    btn.style.background="#d3d6da";
+    btn.style.color="black";
   });
-
-  keyboard.appendChild(rowDiv);
-});
+}
 
 function handleKey(key){
   if(currentRow>=6) return;
   if(key==="ENTER"){ submitGuess(); return; }
-  if(key==="⌫"){ currentGuess = currentGuess.slice(0,-1); updateTiles(); return; }
-  if(currentGuess.length<5 && /^[a-zA-Z]$/.test(key)){ currentGuess += key.toLowerCase(); updateTiles(); }
+  if(key==="⌫"){ currentGuess=currentGuess.slice(0,-1); updateTiles(); return; }
+  if(currentGuess.length<5 && /^[a-zA-Z]$/.test(key)){ currentGuess+=key.toLowerCase(); updateTiles(); }
 }
 
 function updateTiles(){
   const row = board.children[currentRow].children;
-  for(let i=0;i<5;i++) row[i].textContent = currentGuess[i]||"";
+  for(let i=0;i<5;i++) row[i].textContent=currentGuess[i]||"";
 }
 
 function submitGuess(){
@@ -196,27 +234,44 @@ function submitGuess(){
 
   const row = board.children[currentRow].children;
   for(let i=0;i<5;i++){
-    const letter = currentGuess[i];
-    const tile = row[i];
+    const letter=currentGuess[i];
+    const tile=row[i];
     if(letter===answer[i]){ tile.classList.add("correct"); colorKey(letter,"correct"); }
     else if(answer.includes(letter)){ tile.classList.add("present"); colorKey(letter,"present"); }
     else{ tile.classList.add("absent"); colorKey(letter,"absent"); }
   }
 
-  if(currentGuess===answer){ message.textContent="You win!"; currentRow=6; return; }
+  if(currentGuess===answer){
+    message.textContent="You win!";
+    score++;
+    retryBtn.style.display="inline-block";
+    updateScore();
+    currentRow=6;
+    return;
+  }
 
-  currentRow++; currentGuess="";
-  if(currentRow===6) message.textContent="Game over! Word was: "+answer;
+  currentRow++;
+  currentGuess="";
+  if(currentRow===6){
+    message.textContent="Game over! Word was: "+answer;
+    score=0; // reset consecutive wins
+    retryBtn.style.display="inline-block";
+    updateScore();
+  }
 }
 
 function colorKey(letter,status){
   document.querySelectorAll("button.key").forEach(btn=>{
     if(btn.textContent.toLowerCase()===letter){
-      btn.style.background = status==="correct"?"#538d4e":status==="present"?"#b59f3b":"#787c7e";
-      btn.style.color = "white";
+      btn.style.background=status==="correct"?"#538d4e":status==="present"?"#b59f3b":"#787c7e";
+      btn.style.color="white";
     }
   });
 }
+
+function updateScore(){ scoreDisplay.textContent="Score: "+score; }
+
+retryBtn.onclick = () => startGame();
 
 // Physical keyboard support
 document.addEventListener("keydown", e=>{
