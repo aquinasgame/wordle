@@ -47,13 +47,13 @@
   .tile {
     width: 100%;
     aspect-ratio: 1 / 1;
-    border: 2px solid #cccccc;
+    border: 2px solid #000000;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.8em;
     text-transform: uppercase;
-    background: #dbdbdb;
+    background: #cccccc;
   }
 
   .correct { background: #538d4e; color: white; }
@@ -99,6 +99,12 @@
     margin-top: 10px;
     font-size: 1.2em;
     min-height: 1.5em;
+    border: none;
+    border-radius: 8px;
+    background: #cccccc;
+    color: white;
+    cursor: pointer;
+    display: none;
   }
 
   #retry-btn {
@@ -211,7 +217,7 @@ function startGame() {
 
   // Reset keyboard colors
   document.querySelectorAll("button.key").forEach(btn=>{
-    btn.style.background="#595959";
+    btn.style.background="#cccccc";
     btn.style.color="white";
   });
 }
