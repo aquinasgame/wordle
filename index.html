@@ -6,11 +6,18 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    text-align: center;
-    background: #ffffff;
+    background: #fff;
     color: #000;
     margin: 0;
     padding: 0;
+  }
+
+  #game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding-bottom: 20px;
   }
 
   h1 {
@@ -56,19 +63,19 @@
   #keyboard {
     width: 95%;
     max-width: 400px;
-    margin: 20px auto;
+    margin-top: 20px;
     display: grid;
     gap: 6px;
   }
 
   .key-row {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
     gap: 4px;
   }
 
-  .key-row.short { grid-template-columns: 0.5fr repeat(9, 1fr) 0.5fr; } /* middle row */
-  .key-row.last { grid-template-columns: 1fr repeat(7, 1fr) 1fr; } /* bottom row with ENTER & ⌫ */
+  .key-row.first { grid-template-columns: repeat(10, 1fr); }
+  .key-row.second { grid-template-columns: 0.5fr repeat(9, 1fr) 0.5fr; }
+  .key-row.third { grid-template-columns: 1fr repeat(7, 1fr) 1fr; }
 
   button.key {
     padding: 10px;
@@ -103,117 +110,120 @@
 </head>
 <body>
 
-<h1>Wordle Clone</h1>
-<div id="board"></div>
-<div id="keyboard"></div>
-<p id="message"></p>
+<div id="game-container">
+  <h1>Wordle Clone</h1>
+  <div id="board"></div>
+  <div id="keyboard"></div>
+  <p id="message"></p>
+</div>
 
 <script>
-  const words = ["apple", "grape", "stone", "plant", "chair", "light", "world", "brain", "candy", "fruit"];
-  const validWords = [...words, "shiny", "table", "water", "money"]; // add more as desired
-  const answer = words[Math.floor(Math.random() * words.length)];
+let words = ["apple","grape","stone","plant","chair","light","world","brain","candy","fruit"];
+let validWords = [];
+const answer = words[Math.floor(Math.random() * words.length)];
 
-  let currentRow = 0;
-  let currentGuess = "";
+let currentRow = 0;
+let currentGuess = "";
 
-  const board = document.getElementById("board");
-  const keyboard = document.getElementById("keyboard");
-  const message = document.getElementById("message");
+const board = document.getElementById("board");
+const keyboard = document.getElementById("keyboard");
+const message = document.getElementById("message");
 
-  // create board
-  for (let i = 0; i < 6; i++) {
-    const row = document.createElement("div");
-    row.className = "row";
-    for (let j = 0; j < 5; j++) {
-      const tile = document.createElement("div");
-      tile.className = "tile";
-      row.appendChild(tile);
-    }
-    board.appendChild(row);
-  }
-
-  // keyboard layout
-  const layout = [
-    ["Q","W","E","R","T","Y","U","I","O","P"],
-    ["A","S","D","F","G","H","J","K","L"],
-    ["ENTER","Z","X","C","V","B","N","M","⌫"]
-  ];
-
-  layout.forEach((row, i) => {
-    const rowDiv = document.createElement("div");
-    rowDiv.className = "key-row";
-
-    if (i === 1) rowDiv.classList.add("short");
-    if (i === 2) rowDiv.classList.add("last");
-
-    row.forEach(key => {
-      const button = document.createElement("button");
-      button.textContent = key;
-      button.className = "key";
-      if (key === "ENTER" || key === "⌫") button.classList.add("wide");
-      button.onclick = () => handleKey(key);
-      rowDiv.appendChild(button);
-    });
-
-    keyboard.appendChild(rowDiv);
+// Load external word list
+fetch("words.txt")
+  .then(res => res.text())
+  .then(text => {
+    validWords = text.split("\n").map(w => w.trim().toLowerCase());
+  })
+  .catch(err => {
+    console.log("Error loading words.txt, using default:", err);
+    validWords = [...words]; // fallback
   });
 
-  function handleKey(key) {
-    if (currentRow >= 6) return;
-
-    if (key === "ENTER") { submitGuess(); return; }
-    if (key === "⌫") { currentGuess = currentGuess.slice(0,-1); updateTiles(); return; }
-
-    if (currentGuess.length < 5 && /^[a-zA-Z]$/.test(key)) {
-      currentGuess += key.toLowerCase();
-      updateTiles();
-    }
+// Create board
+for (let i = 0; i < 6; i++) {
+  const row = document.createElement("div");
+  row.className = "row";
+  for (let j = 0; j < 5; j++) {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    row.appendChild(tile);
   }
+  board.appendChild(row);
+}
 
-  function updateTiles() {
-    const row = board.children[currentRow].children;
-    for (let i = 0; i < 5; i++) {
-      row[i].textContent = currentGuess[i] || "";
-    }
-  }
+// Keyboard layout
+const layout = [
+  ["Q","W","E","R","T","Y","U","I","O","P"],
+  ["A","S","D","F","G","H","J","K","L"],
+  ["ENTER","Z","X","C","V","B","N","M","⌫"]
+];
 
-  function submitGuess() {
-    if (currentGuess.length !== 5) { message.textContent = "Enter 5 letters"; return; }
-    if (!validWords.includes(currentGuess)) { message.textContent = "Not a valid word"; return; }
+layout.forEach((rowKeys,i)=>{
+  const rowDiv = document.createElement("div");
+  rowDiv.className = "key-row";
+  if(i===0) rowDiv.classList.add("first");
+  if(i===1) rowDiv.classList.add("second");
+  if(i===2) rowDiv.classList.add("third");
 
-    const row = board.children[currentRow].children;
-    for (let i = 0; i < 5; i++) {
-      const letter = currentGuess[i];
-      const tile = row[i];
-
-      if (letter === answer[i]) { tile.classList.add("correct"); colorKey(letter,"correct"); }
-      else if (answer.includes(letter)) { tile.classList.add("present"); colorKey(letter,"present"); }
-      else { tile.classList.add("absent"); colorKey(letter,"absent"); }
-    }
-
-    if (currentGuess === answer) { message.textContent = "You win!"; currentRow = 6; return; }
-
-    currentRow++;
-    currentGuess = "";
-
-    if (currentRow === 6) message.textContent = "Game over! Word was: " + answer;
-  }
-
-  function colorKey(letter, status) {
-    document.querySelectorAll("button.key").forEach(btn => {
-      if (btn.textContent.toLowerCase() === letter) {
-        btn.style.background = status === "correct" ? "#538d4e" : status === "present" ? "#b59f3b" : "#787c7e";
-        btn.style.color = "white";
-      }
-    });
-  }
-
-  // Physical keyboard support
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") handleKey("ENTER");
-    else if (e.key === "Backspace") handleKey("⌫");
-    else if (/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+  rowKeys.forEach(key=>{
+    const btn = document.createElement("button");
+    btn.textContent = key;
+    btn.className = "key";
+    if(key==="ENTER"||key==="⌫") btn.classList.add("wide");
+    btn.onclick = ()=>handleKey(key);
+    rowDiv.appendChild(btn);
   });
+
+  keyboard.appendChild(rowDiv);
+});
+
+function handleKey(key){
+  if(currentRow>=6) return;
+  if(key==="ENTER"){ submitGuess(); return; }
+  if(key==="⌫"){ currentGuess = currentGuess.slice(0,-1); updateTiles(); return; }
+  if(currentGuess.length<5 && /^[a-zA-Z]$/.test(key)){ currentGuess += key.toLowerCase(); updateTiles(); }
+}
+
+function updateTiles(){
+  const row = board.children[currentRow].children;
+  for(let i=0;i<5;i++) row[i].textContent = currentGuess[i]||"";
+}
+
+function submitGuess(){
+  if(currentGuess.length!==5){ message.textContent="Enter 5 letters"; return; }
+  if(!validWords.includes(currentGuess)){ message.textContent="Not a valid word"; return; }
+
+  const row = board.children[currentRow].children;
+  for(let i=0;i<5;i++){
+    const letter = currentGuess[i];
+    const tile = row[i];
+    if(letter===answer[i]){ tile.classList.add("correct"); colorKey(letter,"correct"); }
+    else if(answer.includes(letter)){ tile.classList.add("present"); colorKey(letter,"present"); }
+    else{ tile.classList.add("absent"); colorKey(letter,"absent"); }
+  }
+
+  if(currentGuess===answer){ message.textContent="You win!"; currentRow=6; return; }
+
+  currentRow++; currentGuess="";
+  if(currentRow===6) message.textContent="Game over! Word was: "+answer;
+}
+
+function colorKey(letter,status){
+  document.querySelectorAll("button.key").forEach(btn=>{
+    if(btn.textContent.toLowerCase()===letter){
+      btn.style.background = status==="correct"?"#538d4e":status==="present"?"#b59f3b":"#787c7e";
+      btn.style.color = "white";
+    }
+  });
+}
+
+// Physical keyboard support
+document.addEventListener("keydown", e=>{
+  if(e.key==="Enter") handleKey("ENTER");
+  else if(e.key==="Backspace") handleKey("⌫");
+  else if(/^[a-zA-Z]$/.test(e.key)) handleKey(e.key.toUpperCase());
+});
 </script>
 </body>
 </html>
