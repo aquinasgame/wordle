@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Aquinas Wordle</title>
+  <title>Custom Wordle</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       text-align: center;
-      background: #121213;
-      color: white;
+      background: #ffffff;
+      color: #000;
     }
 
     h1 {
       display: inline-block;
-      background: #dc0c0c;
+      background: #eaeaea;
       padding: 10px 20px;
       border-radius: 10px;
       margin-top: 20px;
@@ -35,17 +35,18 @@
     .tile {
       width: 50px;
       height: 50px;
-      border: 2px solid #3a3a3c;
+      border: 2px solid #ccc;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 24px;
       text-transform: uppercase;
+      background: #fff;
     }
 
-    .correct { background: #538d4e; }
-    .present { background: #b59f3b; }
-    .absent  { background: #3a3a3c; }
+    .correct { background: #538d4e; color: white; }
+    .present { background: #b59f3b; color: white; }
+    .absent  { background: #787c7e; color: white; }
 
     #keyboard {
       width: 90%;
@@ -66,13 +67,14 @@
       border: none;
       border-radius: 5px;
       cursor: pointer;
-      background: #818384;
-      color: white;
+      background: #d3d6da;
+      color: black;
       min-width: 35px;
     }
 
     button.wide {
-      min-width: 60px;
+      min-width: 65px;
+      font-size: 12px;
     }
 
     #message {
@@ -84,12 +86,10 @@
 
 <body>
 
-<h1>Aquinas Wordle</h1>
+<h1>Wordle Clone</h1>
 
 <div id="board"></div>
-
 <div id="keyboard"></div>
-
 <p id="message"></p>
 
 <script>
@@ -116,11 +116,11 @@
     board.appendChild(row);
   }
 
-  // Keyboard layout
+  // Proper keyboard layout
   const layout = [
-    "QWERTYUIOP",
-    "ASDFGHJKL",
-    "ENTERZXCVBNM⌫"
+    ["Q","W","E","R","T","Y","U","I","O","P"],
+    ["A","S","D","F","G","H","J","K","L"],
+    ["ENTER","Z","X","C","V","B","N","M","⌫"]
   ];
 
   const keyboard = document.getElementById("keyboard");
@@ -129,7 +129,7 @@
     const rowDiv = document.createElement("div");
     rowDiv.className = "key-row";
 
-    row.split("").forEach(key => {
+    row.forEach(key => {
       const button = document.createElement("button");
       button.textContent = key;
       button.className = "key";
@@ -217,7 +217,9 @@
       if (btn.textContent.toLowerCase() === letter) {
         if (status === "correct") btn.style.background = "#538d4e";
         else if (status === "present") btn.style.background = "#b59f3b";
-        else btn.style.background = "#3a3a3c";
+        else btn.style.background = "#787c7e";
+
+        btn.style.color = "white";
       }
     });
   }
