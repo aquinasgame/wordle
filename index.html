@@ -57,30 +57,35 @@
     width: 95%;
     max-width: 400px;
     margin: 20px auto;
+    display: grid;
+    gap: 6px;
   }
 
   .key-row {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 5px;
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 4px;
   }
 
+  .key-row.short { grid-template-columns: 0.5fr repeat(9, 1fr) 0.5fr; } /* middle row */
+  .key-row.last { grid-template-columns: 1fr repeat(7, 1fr) 1fr; } /* bottom row with ENTER & ⌫ */
+
   button.key {
-    margin: 3px;
-    padding: 12px;
+    padding: 10px;
     font-size: 1em;
     border: none;
     border-radius: 6px;
     cursor: pointer;
     background: #d3d6da;
     color: black;
-    flex: 1 0 0;
-    min-width: 35px;
+    width: 100%;
+    box-sizing: border-box;
+    text-transform: uppercase;
   }
 
-  button.wide {
-    flex: 1.5 0 0;
+  button.key.wide {
     font-size: 0.9em;
+    padding: 10px 5px;
   }
 
   #message {
@@ -91,12 +96,13 @@
 
   @media (max-width: 400px) {
     h1 { font-size: 1.5em; }
-    button.key { padding: 10px; font-size: 0.9em; }
+    .tile { font-size: 1.5em; }
+    button.key { font-size: 0.9em; padding: 8px; }
   }
 </style>
 </head>
-
 <body>
+
 <h1>Wordle Clone</h1>
 <div id="board"></div>
 <div id="keyboard"></div>
@@ -104,7 +110,7 @@
 
 <script>
   const words = ["apple", "grape", "stone", "plant", "chair", "light", "world", "brain", "candy", "fruit"];
-  const validWords = [...words, "shiny", "table", "water", "money"]; // Add more valid words here
+  const validWords = [...words, "shiny", "table", "water", "money"]; // add more as desired
   const answer = words[Math.floor(Math.random() * words.length)];
 
   let currentRow = 0;
@@ -114,7 +120,7 @@
   const keyboard = document.getElementById("keyboard");
   const message = document.getElementById("message");
 
-  // Create board
+  // create board
   for (let i = 0; i < 6; i++) {
     const row = document.createElement("div");
     row.className = "row";
@@ -126,16 +132,20 @@
     board.appendChild(row);
   }
 
-  // Keyboard layout
+  // keyboard layout
   const layout = [
     ["Q","W","E","R","T","Y","U","I","O","P"],
     ["A","S","D","F","G","H","J","K","L"],
     ["ENTER","Z","X","C","V","B","N","M","⌫"]
   ];
 
-  layout.forEach(row => {
+  layout.forEach((row, i) => {
     const rowDiv = document.createElement("div");
     rowDiv.className = "key-row";
+
+    if (i === 1) rowDiv.classList.add("short");
+    if (i === 2) rowDiv.classList.add("last");
+
     row.forEach(key => {
       const button = document.createElement("button");
       button.textContent = key;
@@ -144,21 +154,16 @@
       button.onclick = () => handleKey(key);
       rowDiv.appendChild(button);
     });
+
     keyboard.appendChild(rowDiv);
   });
 
   function handleKey(key) {
     if (currentRow >= 6) return;
 
-    if (key === "ENTER") {
-      submitGuess();
-      return;
-    }
-    if (key === "⌫") {
-      currentGuess = currentGuess.slice(0, -1);
-      updateTiles();
-      return;
-    }
+    if (key === "ENTER") { submitGuess(); return; }
+    if (key === "⌫") { currentGuess = currentGuess.slice(0,-1); updateTiles(); return; }
+
     if (currentGuess.length < 5 && /^[a-zA-Z]$/.test(key)) {
       currentGuess += key.toLowerCase();
       updateTiles();
@@ -173,55 +178,31 @@
   }
 
   function submitGuess() {
-    if (currentGuess.length !== 5) {
-      message.textContent = "Enter 5 letters";
-      return;
-    }
-
-    if (!validWords.includes(currentGuess)) {
-      message.textContent = "Not a valid word";
-      return;
-    }
+    if (currentGuess.length !== 5) { message.textContent = "Enter 5 letters"; return; }
+    if (!validWords.includes(currentGuess)) { message.textContent = "Not a valid word"; return; }
 
     const row = board.children[currentRow].children;
-
     for (let i = 0; i < 5; i++) {
       const letter = currentGuess[i];
       const tile = row[i];
 
-      if (letter === answer[i]) {
-        tile.classList.add("correct");
-        colorKey(letter, "correct");
-      } else if (answer.includes(letter)) {
-        tile.classList.add("present");
-        colorKey(letter, "present");
-      } else {
-        tile.classList.add("absent");
-        colorKey(letter, "absent");
-      }
+      if (letter === answer[i]) { tile.classList.add("correct"); colorKey(letter,"correct"); }
+      else if (answer.includes(letter)) { tile.classList.add("present"); colorKey(letter,"present"); }
+      else { tile.classList.add("absent"); colorKey(letter,"absent"); }
     }
 
-    if (currentGuess === answer) {
-      message.textContent = "You win!";
-      currentRow = 6;
-      return;
-    }
+    if (currentGuess === answer) { message.textContent = "You win!"; currentRow = 6; return; }
 
     currentRow++;
     currentGuess = "";
 
-    if (currentRow === 6) {
-      message.textContent = "Game over! Word was: " + answer;
-    }
+    if (currentRow === 6) message.textContent = "Game over! Word was: " + answer;
   }
 
   function colorKey(letter, status) {
-    const buttons = document.querySelectorAll("button.key");
-    buttons.forEach(btn => {
+    document.querySelectorAll("button.key").forEach(btn => {
       if (btn.textContent.toLowerCase() === letter) {
-        if (status === "correct") btn.style.background = "#538d4e";
-        else if (status === "present") btn.style.background = "#b59f3b";
-        else btn.style.background = "#787c7e";
+        btn.style.background = status === "correct" ? "#538d4e" : status === "present" ? "#b59f3b" : "#787c7e";
         btn.style.color = "white";
       }
     });
